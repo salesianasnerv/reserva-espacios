@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reserva de espacios | Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)</title>
+  <meta name="description" content="Reserva de espacios, iPads y portátiles del colegio para el profesorado.">
+  <meta name="theme-color" content="#009abb">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Reservas">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <!-- Vista previa al compartir (WhatsApp, Teams…) -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="Escuelas Salesianas María Auxiliadora">
+  <meta property="og:title" content="Reserva de espacios | Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)">
+  <meta name="twitter:title" content="Reserva de espacios | Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)">
+  <meta property="og:description" content="Reserva de espacios, iPads y portátiles del colegio para el profesorado.">
+  <meta property="og:url" content="https://reserva-espacios.vercel.app/">
+  <meta property="og:image" content="https://reserva-espacios.vercel.app/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Reserva de espacios | Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://reserva-espacios.vercel.app/og-image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="marca"><img class="logo" src="logo.svg" alt="Salesianas Nervión"><h1>Reserva de espacios</h1></div>
+    <div class="usuario" id="usuario"></div>
+  </header>
+  <nav id="tabs" hidden>
+    <button data-vista="reservar" class="activa">Reservar</button>
+    <button data-vista="ocupacion">Ocupación</button>
+    <button data-vista="mias">Mis reservas <span class="contador" id="nMias" hidden></span></button>
+    <div class="menu-g" id="tabAdmin" hidden>
+      <button type="button" data-menu="admin" aria-haspopup="true">Administración</button>
+      <div class="desplegable">
+        <button type="button" data-admin="listado" style="--c:#007791"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.5" fill="currentColor"/><circle cx="4.5" cy="12" r="1.5" fill="currentColor"/><circle cx="4.5" cy="18" r="1.5" fill="currentColor"/></svg>Todas las reservas</button>
+        <button type="button" data-admin="espacios" style="--c:#8a9400"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Espacios y dispositivos</button>
+        <button type="button" data-admin="horario" style="--c:#ee712a"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Horas habituales</button>
+        <button type="button" data-admin="bloqueos" style="--c:#c0262d"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Bloqueos y usos fijos</button>
+        <button type="button" data-admin="cuentas" style="--c:#475569"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Cuentas de administración</button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="demoAviso" class="demo" hidden>
+    <strong>Modo prueba:</strong> los datos se guardan solo en este navegador.
+    <button id="btnEjemplo" class="enlace">Generar reservas de ejemplo</button> ·
+    <button id="btnVaciar" class="enlace">Borrar todo</button>
+  </div>
+
+  <main>
+    <!-- Acceso -->
+    <section id="vLogin" class="login" hidden>
+      <div class="tarjeta">
+        <img class="logo" src="logo.svg" alt="Salesianas Nervión">
+        <span class="eyebrow">Profesorado · Curso 2026-2027</span>
+        <h1>Reserva de espacios</h1>
+        <p>Pulsa el botón y entra con tu cuenta del colegio <strong>@salesianas.org</strong>.</p>
+        <button id="btnLogin" class="btn primario grande btn-ms" type="button">
+          <svg viewBox="0 0 21 21" width="20" height="20" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+          Entrar con Microsoft 365
+        </button>
+        <button class="btn instalar instalar-portada" type="button" hidden>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+          Instalar la app en este dispositivo
+        </button>
+        <p id="loginError" class="error"></p>
+      </div>
+    </section>
+
+    <!-- Reservar -->
+    <section id="vReservar" hidden>
+      <div class="paso caja">
+        <h2 class="paso-tit"><span>1</span>¿Cuándo?</h2>
+        <p class="ayuda">Elige el día y escribe las horas (o elige una hora habitual). Puedes añadir más días u horarios.</p>
+        <div id="slots"></div>
+        <div class="slots-acc">
+          <button class="btn" id="btnSlot" type="button">+ Añadir otro día u horario</button>
+          <label class="check"><input type="checkbox" id="fRepetir"> Repetir cada semana</label>
+          <label class="campo-linea" id="fHastaL" hidden>hasta el <input type="date" id="fHasta"></label>
+        </div>
+        <p class="nota" id="slotsNota"></p>
+      </div>
+
+      <div class="paso caja">
+        <h2 class="paso-tit"><span>2</span>¿Qué necesitas?</h2>
+        <p class="ayuda" id="queAyuda">Puedes marcar varios espacios y dispositivos a la vez.</p>
+        <div id="que"></div>
+      </div>
+
+      <div class="paso caja">
+        <h2 class="paso-tit"><span>3</span>¿Para qué?</h2>
+        <div class="fila">
+          <label class="campo crece">Grupo o actividad <input id="fMotivo" maxlength="120" placeholder="Ej.: 2º ESO B · práctica de química" autocomplete="off"></label>
+          <label class="campo crece" id="fEmailL" hidden>A nombre de (si no es para ti) <input id="fEmail" type="email" placeholder="nombre.apellido@salesianas.org" autocomplete="off"></label>
+        </div>
+        <div id="resumen" class="resumen"></div>
+      </div>
+
+      <div id="barraSel" class="barra-sel" hidden>
+        <span id="selTexto"></span>
+        <button class="btn" id="selQuitar" type="button">Empezar de nuevo</button>
+        <button class="btn primario" id="selReservar" type="button">Reservar</button>
+      </div>
+    </section>
+
+    <!-- Ocupación -->
+    <section id="vOcupacion" hidden>
+      <div class="bloque-cab">
+        <h2 class="etapa">Ocupación</h2>
+        <button class="btn" type="button" onclick="window.print()">Imprimir</button>
+      </div>
+      <div class="semana-nav">
+        <button class="btn icono" id="ocAnt" type="button" aria-label="Día anterior"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <strong id="ocTexto"></strong>
+        <button class="btn icono" id="ocSig" type="button" aria-label="Día siguiente"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn" id="ocHoy" type="button">Hoy</button>
+        <label class="btn ir-fecha">Ir a fecha <input type="date" id="ocFecha"></label>
+      </div>
+      <p class="ayuda">Pulsa una reserva para ver quién la tiene, o un hueco libre para reservarlo. Pulsa iPads o Portátiles para ver cada uno.</p>
+      <div id="ocupacion" class="tl-scroll"></div>
+    </section>
+
+    <!-- Mis reservas -->
+    <section id="vMias" hidden>
+      <div class="mias-cab">
+        <h2 class="etapa">Mis reservas</h2>
+        <label class="check"><input type="checkbox" id="miasPasadas"> Ver también las pasadas</label>
+      </div>
+      <div id="mias"></div>
+    </section>
+  </main>
+
+  <!-- Administración (solo cuentas autorizadas) -->
+  <section id="vAdmin" class="admin" hidden>
+    <!-- Todas las reservas -->
+    <section class="caja admin-bloque" data-sec="listado">
+      <h2>Todas las reservas</h2>
+      <p class="ayuda">Filtra por fechas, espacio o profesor/a. Puedes descargar el resultado para abrirlo en Excel. Para ver un día de un vistazo, usa «Ocupación».</p>
+      <form id="lisFiltros" class="filtros">
+        <label class="campo">Desde <input type="date" name="desde"></label>
+        <label class="campo">Hasta <input type="date" name="hasta"></label>
+        <label class="campo">Espacio o dispositivo <select name="espacio"></select></label>
+        <label class="campo">Profesor/a <input type="search" name="prof" placeholder="Nombre o correo" autocomplete="off"></label>
+      </form>
+      <div class="acciones"><button id="btnCsv" class="btn" type="button">Descargar Excel (CSV)</button></div>
+      <div id="listado"></div>
+    </section>
+
+    <!-- Espacios y dispositivos -->
+    <section class="caja admin-bloque" data-sec="espacios">
+      <h2>Espacios y dispositivos</h2>
+      <p class="ayuda">Lo que se puede reservar y entre qué horas. Cada iPad o portátil se reserva por separado; los packs sirven para marcar varios de golpe. Para retirar algo sin perder su historial, desactívalo.</p>
+      <div id="admEspacios"></div>
+    </section>
+
+    <!-- Horas habituales -->
+    <section class="caja admin-bloque" data-sec="horario">
+      <h2>Horas habituales</h2>
+      <p class="ayuda">Son solo atajos: al reservar, el profesorado puede elegir una de estas horas o escribir las que quiera. Cambiarlas no afecta a las reservas ya hechas.</p>
+      <div id="admFranjas"></div>
+      <div class="acciones"><button class="btn primario" id="btnNuevaFranja" type="button">+ Añadir hora habitual</button></div>
+    </section>
+
+    <!-- Bloqueos -->
+    <section class="caja admin-bloque" data-sec="bloqueos">
+      <h2>Bloqueos y usos fijos</h2>
+      <p class="ayuda">Momentos en los que algo no se puede reservar: clases fijas cada semana (p. ej. Informática de 1º ESO A los lunes de 9:00 a 10:00), festivos, actos del colegio… Las reservas que ya existan no se borran.</p>
+      <form id="bloqForm" class="filtros">
+        <label class="campo">Qué <select name="espacio"></select></label>
+        <label class="campo">Cuándo
+          <select name="tipo">
+            <option value="fecha">Un día concreto</option>
+            <option value="semanal">Cada semana</option>
+          </select>
+        </label>
+        <label class="campo" data-b="fecha">Día <input type="date" name="fecha"></label>
+        <label class="campo" data-b="fecha">Hasta (opcional) <input type="date" name="fechaFin"></label>
+        <label class="campo" data-b="semanal">Día de la semana
+          <select name="dia"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="7">Domingo</option></select>
+        </label>
+        <label class="campo" data-b="semanal">Desde el <input type="date" name="desde"></label>
+        <label class="campo" data-b="semanal">Hasta el <input type="date" name="hasta"></label>
+        <label class="campo">De (vacío = todo el día) <input type="time" name="inicio" step="300"></label>
+        <label class="campo">A <input type="time" name="fin" step="300"></label>
+        <label class="campo motivo">Motivo <input name="motivo" placeholder="Clase fija de 1º ESO A, festivo…" autocomplete="off" required></label>
+        <button class="btn primario">Añadir bloqueo</button>
+      </form>
+      <div id="admBloqueos"></div>
+    </section>
+
+    <!-- Cuentas de administración -->
+    <section class="caja admin-bloque" data-sec="cuentas">
+      <h2>Cuentas de administración</h2>
+      <p class="ayuda">Estas cuentas ven el menú Administración: ven y gestionan todas las reservas, cambian espacios, dispositivos, horas y bloqueos, y pueden dar o quitar este acceso. El resto del profesorado solo ve Reservar, Ocupación y Mis reservas.</p>
+      <div id="admCuentas"></div>
+      <form id="admCuentaForm" class="fila alta">
+        <label class="campo crece">Añadir cuenta <input name="email" type="email" placeholder="nombre.apellido@salesianas.org" autocomplete="off" required></label>
+        <button class="btn primario">Añadir</button>
+      </form>
+    </section>
+  </section>
+
+  <footer class="pie">Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)</footer>
+
+  <dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
