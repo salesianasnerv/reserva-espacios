@@ -154,7 +154,7 @@ dialog::backdrop { background: rgba(15, 20, 30, .45); }
   .filtros { grid-template-columns: 1fr 1fr; }
 }
 
-.sin-sesion .top, .sin-sesion nav { display: none; }
+.sin-sesion nav { display: none; }
 tr.de-baja td { color: var(--suave); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 .nota { display: block; color: var(--suave); font-size: 12px; margin: 6px 0; }
@@ -352,3 +352,63 @@ details.cat[open] > summary .flecha { transform: rotate(45deg); }
 .lg-mia { background: var(--ok-bg); border-left: 3px solid var(--verde) !important; }
 .lg-ahora { width: 3px !important; border: 0 !important; background: var(--naranja); }
 @media (max-width: 700px) { details.cat > summary { flex-wrap: wrap; } .cat-estado { justify-content: flex-start; } }
+
+/* ─── Portada (como en el portal de utilidades, en naranja: apartado «General»): cabecera solo con el logo,
+   franja con el curso y los botones, nombre de quien ha entrado, cartel, descripción y cajas desplegables ─── */
+.top.solo-logo { justify-content: center; border-bottom: 0; padding: 12px 16px; }
+.top.solo-logo .logo { height: 64px; }
+.franja { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: #ee712a; color: #fff; }
+.franja .quien { font-size: 13px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.franja-acc { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+.franja-btn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.75);
+  background: rgba(255,255,255,.14); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.franja-btn:hover { background: #fff; color: #b9530f; text-shadow: none; }
+.franja-btn svg, .sesion svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sesion { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px 0; font-size: 13px; }
+.sesion-nombre { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--texto); }
+.sesion-nombre svg { color: #d35a15; }
+.sesion-salir { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(238, 113, 42, .7); background: var(--panel); color: #b9530f; font: inherit; font-size: 13px; font-weight: 600; }
+.sesion-salir:hover { background: #ee712a; border-color: #ee712a; color: #fff; }
+.presenta { padding: 22px max(16px, calc((100% - 1100px) / 2 + 16px)); }
+.sesion:not([hidden]) + .presenta { padding-top: 8px; }
+.presenta-sup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+.cartel { display: inline-block; background: rgba(238, 113, 42, .14); color: #b9530f; font-weight: 700; font-size: .78rem;
+  letter-spacing: .06em; text-transform: uppercase; padding: .3rem .8rem; border-radius: 999px; }
+.presenta-cab { display: flex; align-items: center; gap: 16px; }
+.presenta-ico { flex: none; width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; background: rgba(238, 113, 42, .14); color: #d35a15; }
+.presenta-ico svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.presenta h1 { margin: 0 0 4px; font-size: 1.6rem; line-height: 1.2; color: #d35a15; }
+.presenta-cab p { margin: 0; color: var(--suave); max-width: 70ch; }
+.presenta-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 18px; align-items: start; }
+.info-bloque { background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio); }
+.info-bloque summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; font-weight: 700; }
+.info-bloque summary::-webkit-details-marker { display: none; }
+.info-bloque summary > svg { width: 20px; height: 20px; flex: none; fill: none; stroke: #d35a15; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.info-bloque summary > span { flex: 1; min-width: 0; }
+.info-bloque summary small { display: block; font-weight: 500; font-size: .8rem; color: var(--suave); }
+.info-bloque summary::after { content: ""; flex: none; width: 8px; height: 8px; border-right: 2px solid var(--suave); border-bottom: 2px solid var(--suave);
+  transform: rotate(45deg); margin: -4px 4px 0; transition: transform .15s; }
+.info-bloque[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
+.info-bloque summary:hover { color: #d35a15; }
+.info-bloque ul { margin: 0; padding: 0 16px 14px 34px; color: var(--suave); font-size: .9rem; }
+.info-bloque li + li { margin-top: 3px; }
+.info-bloque b { color: var(--texto); font-weight: 600; }
+.aviso-etq { display: inline-block; margin-left: 6px; vertical-align: 3px; line-height: 1.5; font-style: normal; font-size: .7rem; font-weight: 700;
+  color: var(--mal); background: var(--mal-bg); padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.presenta + nav { border-top: 2px solid rgba(238, 113, 42, .5); }
+.sin-sesion .presenta { border-bottom: 2px solid rgba(238, 113, 42, .5); }
+.login { min-height: 0; padding: 28px 0 32px; }
+.tarjeta h2 { margin: 0 0 .4rem; color: #d35a15; font-size: 1.4rem; }
+#btnLogin { background: #ee712a; border-color: #ee712a; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.2); box-shadow: 0 6px 16px -6px rgba(238, 113, 42, .6); }
+#btnLogin:hover { background: #d35a15; border-color: #d35a15; }
+:root[data-theme="dark"] .presenta h1, :root[data-theme="dark"] .tarjeta h2, :root[data-theme="dark"] .cartel,
+:root[data-theme="dark"] .presenta-ico, :root[data-theme="dark"] .sesion-salir { color: #f59152; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .presenta h1, :root:not([data-theme="light"]) .tarjeta h2,
+  :root:not([data-theme="light"]) .cartel, :root:not([data-theme="light"]) .presenta-ico, :root:not([data-theme="light"]) .sesion-salir { color: #f59152; } }
+@media print { .franja, .sesion, .presenta { display: none !important; } }
+@media (max-width: 560px) {
+  .top.solo-logo .logo { height: 54px; }
+  .presenta-cab { align-items: flex-start; } .presenta h1 { font-size: 1.3rem; } .presenta-ico { width: 46px; height: 46px; }
+  .presenta-info { grid-template-columns: 1fr; }
+}
