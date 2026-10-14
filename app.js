@@ -64,7 +64,7 @@
   // ─── Estado ──────────────────────────────────────────────────────────────
   const formNuevo = () => ({ slots: [{ fecha: proximoDia(), inicio: "", fin: "" }], repetir: false, hasta: "", sel: new Set() });
   const S = { user: null, franjas: [], espacios: [], bloqueos: [], packs: [], reservas: [], dispo: [], form: null,
-    ocDia: hoyIso(), abiertos: new Set(), admSec: null, vista: null };
+    ocDia: hoyIso(), abiertos: new Set(), catAbiertas: new Set(), admSec: null, vista: null };
   const espacio = (id) => S.espacios.find((e) => e.id == id);
   const franjasActivas = () => S.franjas.filter((f) => f.activo);
   // Etapas de las horas habituales; la última que usó esta persona va primero
@@ -74,6 +74,10 @@
   const salas = (todas) => S.espacios.filter((e) => e.tipo === "espacio" && (todas || e.activo));
   const grupos = () => [...new Set(S.espacios.filter((e) => e.tipo === "dispositivo").sort((a, b) => a.orden - b.orden).map((e) => e.grupo))];
   const deGrupo = (g, todas) => S.espacios.filter((e) => e.grupo === g && (todas || e.activo)).sort((a, b) => (a.numero ?? 0) - (b.numero ?? 0) || a.nombre.localeCompare(b.nombre));
+  // Categorías: las de los espacios (Zonas comunes, Aulas temáticas…) y, al final, los dispositivos
+  const DISP = "Dispositivos";
+  const catDe = (e) => (e.tipo === "dispositivo" ? DISP : e.categoria || "Otros espacios");
+  const categorias = (todas) => [...new Set(salas(todas).map(catDe)), ...(grupos().length ? [DISP] : [])];
   const etiqueta = (e) => (e.tipo === "dispositivo" && e.numero != null ? String(e.numero) : e.nombre);
 
   // Siguiente día lectivo (hoy si aún queda jornada)
@@ -124,7 +128,7 @@
   }
 
   // ─── Acceso a datos: modo prueba (navegador) ─────────────────────────────
-  const CLAVE = "re_demo_db3";
+  const CLAVE = "re_demo_db4";
   const ESO = "ESO · Bachillerato · CCFF", PRI = "Infantil · Primaria";
   const HORARIOS = [
     [ESO, [["1ª hora", "08:00", "09:00"], ["2ª hora", "09:00", "10:00"], ["3ª hora", "10:00", "11:00"], ["Recreo", "11:00", "11:30"],
@@ -135,12 +139,12 @@
   function demoInicial() {
     let id = 0;
     const espacios = [
-      ["Salón de Actos", "Actos, charlas y reuniones grandes.", "#009abb", "escenario"],
-      ["Biblioteca", "Lectura, trabajo en grupo y reuniones.", "#8a9400", "libro"],
-      ["Recibidor", "Atención a familias y reuniones pequeñas.", "#ee712a", "puerta"],
-      ["Aula de Informática", "Ordenadores fijos para un grupo completo.", "#007791", "pantalla"],
-      ["Laboratorio", "Prácticas de ciencias.", "#6b7200", "matraz"],
-    ].map(([nombre, descripcion, color, ic], k) => ({ id: ++id, nombre, descripcion, tipo: "espacio", grupo: null, numero: null, color, icono: ic, dias: [1, 2, 3, 4, 5], apertura: "08:00", cierre: "14:30", activo: true, orden: k + 1 }));
+      ["Salón de Actos", "Actos, charlas y reuniones grandes.", "#009abb", "escenario", "Zonas comunes"],
+      ["Biblioteca", "Lectura, trabajo en grupo y reuniones.", "#8a9400", "libro", "Zonas comunes"],
+      ["Recibidor", "Atención a familias y reuniones pequeñas.", "#ee712a", "puerta", "Zonas comunes"],
+      ["Aula de Informática", "Ordenadores fijos para un grupo completo.", "#007791", "pantalla", "Aulas temáticas"],
+      ["Laboratorio", "Prácticas de ciencias.", "#6b7200", "matraz", "Aulas temáticas"],
+    ].map(([nombre, descripcion, color, ic, categoria], k) => ({ id: ++id, nombre, descripcion, tipo: "espacio", categoria, grupo: null, numero: null, color, icono: ic, dias: [1, 2, 3, 4, 5], apertura: "08:00", cierre: "14:30", activo: true, orden: k + 1 }));
     const disp = (g, pref, n, color, ic, base) => Array.from({ length: n }, (_, k) => ({ id: ++id, nombre: `${pref} ${k + 1}`, descripcion: null, tipo: "dispositivo", grupo: g, numero: k + 1, color, icono: ic, dias: [1, 2, 3, 4, 5], apertura: "08:00", cierre: "14:30", activo: true, orden: base + k + 1 }));
     const ipads = disp("iPads", "iPad", 15, "#d35a15", "tableta", 100), port = disp("Portátiles", "Portátil", 20, "#475569", "portatil", 200);
     const pack = (g, nombre, l, a, b, o) => ({ id: ++id, grupo: g, nombre, espacios: l.slice(a - 1, b).map((e) => e.id), orden: o });
@@ -405,6 +409,8 @@
     $("#fRepetir").onchange = (e) => { S.form.repetir = e.target.checked; $("#fHastaL").hidden = !e.target.checked; cambioCuando(); };
     $("#fHasta").oninput = (e) => { S.form.hasta = e.target.value; cambioCuando(); };
     $("#que").addEventListener("click", pulsarQue);
+    // Recordar qué categorías tiene abiertas cada uno
+    $("#que").addEventListener("toggle", (e) => { const d = e.target; if (d.matches?.("details.cat")) d.open ? S.catAbiertas.add(d.dataset.cat) : S.catAbiertas.delete(d.dataset.cat); }, true);
     $("#selQuitar").onclick = () => { S.form = formNuevo(); $("#fMotivo").value = ""; $("#fEmail").value = ""; refrescar(); };
     $("#selReservar").onclick = reservar;
   }
@@ -483,14 +489,14 @@
   function pintarQue() {
     const hay = !!S.oc?.length, sel = S.form.sel;
     $("#queAyuda").textContent = hay ? "Marca todo lo que necesites: varios espacios y dispositivos a la vez. En gris, lo ocupado; con borde naranja, lo que está ocupado solo en alguna de las fechas elegidas." : "Primero indica cuándo; así verás qué está libre. Puedes marcar varios espacios y dispositivos a la vez.";
-    const tarjetas = salas().map((e) => {
+    const tarjeta = (e) => {
       const st = estadoRecurso(e), on = sel.has(e.id);
       const cls = on ? "on" : st.todos ? "ocupado" : st.n ? "parcial" : hay ? "libre" : "";
       return `<button type="button" class="recurso ${cls}" data-id="${e.id}" style="--c:${esc(e.color)}" ${st.todos && !on ? "disabled" : ""} title="${tituloEstado(e, st)}">
         <span class="esp-icono">${icono(e.icono)}</span><span class="esp-txt"><span class="en">${esc(e.nombre)}</span><span class="estado">${esc(textoEstado(st) || e.descripcion || "")}</span></span>
         <span class="marca-sel" aria-hidden="true"></span></button>`;
-    }).join("");
-    const bloques = grupos().map((g) => {
+    };
+    const bloque = (g) => {
       const l = deGrupo(g); if (!l.length) return "";
       const st = new Map(l.map((e) => [e.id, estadoRecurso(e)]));
       const libres = l.filter((e) => !st.get(e.id).n).length, elegidos = l.filter((e) => sel.has(e.id)).length;
@@ -503,8 +509,19 @@
         <div class="fichas">${l.map((e) => { const s = st.get(e.id), on = sel.has(e.id);
           return `<button type="button" class="dispo ${on ? "on" : s.todos ? "ocupado" : s.n ? "parcial" : ""}" data-id="${e.id}" ${s.todos && !on ? "disabled" : ""} title="${tituloEstado(e, s)}">${esc(etiqueta(e))}</button>`; }).join("")}</div>
       </div>`;
+    };
+    // Cada categoría es un desplegable; en el título se ve qué incluye y cuántos hay libres o elegidos
+    $("#que").innerHTML = categorias().map((cat) => {
+      const es = cat === DISP ? grupos().flatMap((g) => deGrupo(g)) : salas().filter((e) => catDe(e) === cat);
+      if (!es.length) return "";
+      const nSel = es.filter((e) => sel.has(e.id)).length, libres = es.filter((e) => !estadoRecurso(e).n).length;
+      const incluye = cat === DISP ? grupos().map((g) => `${g} (${deGrupo(g).length})`).join(" · ") : es.map((e) => e.nombre).join(" · ");
+      const cuerpo = cat === DISP ? grupos().map(bloque).join("") : `<div class="recursos">${es.map(tarjeta).join("")}</div>`;
+      return `<details class="cat" data-cat="${esc(cat)}" ${S.catAbiertas.has(cat) ? "open" : ""}>
+        <summary><span class="cat-txt"><b>${esc(cat)}</b><small>${esc(incluye)}</small></span>
+          <span class="cat-estado">${nSel ? `<span class="cat-sel">${nSel} ${nSel === 1 ? "elegido" : "elegidos"}</span>` : ""}${hay ? `<span>${libres} de ${es.length} libres</span>` : ""}</span><span class="flecha"></span></summary>
+        <div class="cat-cuerpo">${cuerpo}</div></details>`;
     }).join("");
-    $("#que").innerHTML = `<div class="recursos">${tarjetas}</div>${bloques}`;
     pintarResumen();
   }
 
@@ -558,6 +575,7 @@
   // Empezar una reserva ya rellena (desde Ocupación)
   function reservarDesde(fecha, inicio, fin, id) {
     S.form = { slots: [{ fecha, inicio, fin }], repetir: false, hasta: "", sel: new Set([id]) };
+    S.catAbiertas.add(catDe(espacio(id)));
     mostrar("reservar"); scrollTo({ top: 0 });
   }
 
@@ -589,8 +607,8 @@
     const ahora = d === hoy && toMin(ahoraHM()) > t0 && toMin(ahoraHM()) < t1 ? `<i class="tl-ahora" style="left:${pos(ahoraHM())}%"></i>` : "";
     const fondo = (e) => {
       if (!e.dias.includes(dow)) return `<div class="tl-cerrado" style="left:0;width:100%">No se reserva este día</div>`;
-      return (toMin(e.apertura) > t0 ? `<div class="tl-cerrado" style="${caja(deMin(t0), e.apertura)}"></div>` : "") +
-        (toMin(e.cierre) < t1 ? `<div class="tl-cerrado" style="${caja(e.cierre, deMin(t1))}"></div>` : "") +
+      return (toMin(e.apertura) > t0 ? `<div class="tl-cerrado" style="${caja(deMin(t0), e.apertura)}" title="Horas no lectivas"></div>` : "") +
+        (toMin(e.cierre) < t1 ? `<div class="tl-cerrado" style="${caja(e.cierre, deMin(t1))}" title="Horas no lectivas"></div>` : "") +
         bloqueosDe(e, d).map((b) => `<div class="tl-bloq" style="${b.inicio ? caja(b.inicio, b.fin) : "left:0;width:100%"}" title="${esc(b.motivo)}">${esc(b.motivo)}</div>`).join("");
     };
     const barra = (r) => `<button type="button" class="tl-res ${r.profesor_email === S.user.email ? "mia" : ""}" data-res="${r.id}" style="${caja(r.inicio, r.fin)}"
@@ -611,7 +629,14 @@
       return `<div class="tl-fila tl-grupo" data-grupo="${esc(g)}" style="--c:${esc(l[0].color)}"><div class="tl-nom"><span class="esp-icono mini">${icono(l[0].icono)}</span><span>${esc(g)} <small>(${l.length})</small></span><span class="flecha ${abierto ? "abierta" : ""}"></span></div>
         <div class="tl-pista">${fondo(l[0])}${seg}${ahora}</div></div>` + (abierto ? l.map((e) => fila(e, "tl-hijo")).join("") : "");
     };
-    $("#ocupacion").innerHTML = `<div class="tl" style="--horas:${(t1 - t0) / 60}">${regla}${salas().map((e) => fila(e)).join("")}${grupos().map((g) => { const l = deGrupo(g); return l.length ? resumenGrupo(g, l) : ""; }).join("")}</div>
+    const porCategoria = categorias().map((cat) => {
+      const cuerpo = cat === DISP ? grupos().map((g) => { const l = deGrupo(g); return l.length ? resumenGrupo(g, l) : ""; }).join("")
+        : salas().filter((e) => catDe(e) === cat).map((e) => fila(e)).join("");
+      return cuerpo ? `<div class="tl-cat"><span>${esc(cat)}</span></div>${cuerpo}` : "";
+    }).join("");
+    const leyenda = `<div class="tl-leyenda"><span><i class="lg-cerrado"></i>Horas no lectivas (no se reserva)</span><span><i class="lg-bloq"></i>No disponible (clase fija, acto…)</span>
+      <span><i class="lg-res"></i>Reservado</span><span><i class="lg-mia"></i>Tu reserva</span>${ahora ? '<span><i class="lg-ahora"></i>Ahora</span>' : ""}</div>`;
+    $("#ocupacion").innerHTML = `<div class="tl" style="--horas:${(t1 - t0) / 60}">${regla}${porCategoria}</div>${leyenda}
       <p class="nota">${S.reservas.length ? `${S.reservas.length} ${S.reservas.length === 1 ? "reserva" : "reservas"} este día.` : "Ninguna reserva este día."}</p>`;
   }
 
@@ -801,7 +826,7 @@
   // Select con todo: espacios, grupos completos y cada dispositivo
   function rellenarSelectRecursos(sel, todos) {
     const v = sel.value, op = (val, txt) => `<option value="${val}">${esc(txt)}</option>`;
-    sel.innerHTML = op("", todos) + `<optgroup label="Espacios">${salas(true).map((e) => op("e:" + e.id, e.nombre + (e.activo ? "" : " (desactivado)"))).join("")}</optgroup>` +
+    sel.innerHTML = op("", todos) + categorias(true).filter((c) => c !== DISP).map((c) => `<optgroup label="${esc(c)}">${salas(true).filter((e) => catDe(e) === c).map((e) => op("e:" + e.id, e.nombre + (e.activo ? "" : " (desactivado)"))).join("")}</optgroup>`).join("") +
       grupos().map((g) => `<optgroup label="${esc(g)}">${op("g:" + g, "Todos los " + g)}${deGrupo(g, true).map((e) => op("e:" + e.id, e.nombre)).join("")}</optgroup>`).join("");
     sel.value = v;
   }
@@ -840,11 +865,12 @@
   // Espacios y dispositivos
   const textoDias = (dias) => (dias.join() === "1,2,3,4,5" ? "De lunes a viernes" : dias.map((d) => DIAS_C[d]).join(" "));
   function pintarEspaciosAdmin() {
-    const sal = `<h3 class="sub">Espacios</h3><div class="tabla-scroll"><table><tr><th></th><th>Nombre</th><th>Se reserva</th><th>Días</th><th></th></tr>
-      ${salas(true).map((e) => `<tr class="${e.activo ? "" : "de-baja"}">
+    const orden = categorias(true);
+    const sal = `<h3 class="sub">Espacios</h3><div class="tabla-scroll"><table><tr><th></th><th>Nombre</th><th>Categoría</th><th>Se reserva</th><th>Días</th><th></th></tr>
+      ${[...salas(true)].sort((a, b) => orden.indexOf(catDe(a)) - orden.indexOf(catDe(b))).map((e) => `<tr class="${e.activo ? "" : "de-baja"}">
         <td><span class="esp-icono mini" style="--c:${esc(e.color)}">${icono(e.icono)}</span></td>
         <td><b>${esc(e.nombre)}</b>${e.activo ? "" : ' <span class="tag-archivado">desactivado</span>'}<br><small>${esc(e.descripcion || "")}</small></td>
-        <td>${e.apertura}–${e.cierre}</td><td>${textoDias(e.dias)}</td>
+        <td>${esc(catDe(e))}</td><td>${e.apertura}–${e.cierre}</td><td>${textoDias(e.dias)}</td>
         <td class="acciones-fila"><button class="btn mini" type="button" data-editar="${e.id}">Editar</button></td></tr>`).join("")}</table></div>
       <div class="acciones"><button class="btn" type="button" data-nuevo-espacio>+ Añadir espacio</button></div>`;
     const gs = grupos().map((g) => {
@@ -884,10 +910,13 @@
 
   async function editarEspacio(e) {
     const nuevo = !e;
-    e ||= { nombre: "", descripcion: "", color: "#009abb", icono: "sala", dias: [1, 2, 3, 4, 5], apertura: "08:00", cierre: "14:30", activo: true };
+    e ||= { nombre: "", descripcion: "", categoria: "Zonas comunes", color: "#009abb", icono: "sala", dias: [1, 2, 3, 4, 5], apertura: "08:00", cierre: "14:30", activo: true };
+    const cats = [...new Set(["Zonas comunes", "Aulas temáticas", ...salas(true).map((x) => x.categoria).filter(Boolean)])];
     const v = await dialogo(`<h2>${nuevo ? "Nuevo espacio" : "Editar " + esc(e.nombre)}</h2>
       <label class="campo">Nombre <input name="nombre" value="${esc(e.nombre)}" required autocomplete="off"></label>
       <label class="campo">Descripción <input name="descripcion" value="${esc(e.descripcion || "")}" placeholder="Para qué sirve, dónde está…" autocomplete="off"></label>
+      <label class="campo">Categoría <input name="categoria" value="${esc(e.categoria || "")}" list="catLista" placeholder="Zonas comunes, Aulas temáticas…" autocomplete="off" required>
+        <datalist id="catLista">${cats.map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
       ${camposComunes(e)}
       <label class="check"><input type="checkbox" name="activo" ${e.activo ? "checked" : ""}> Se puede reservar (si lo desactivas, deja de aparecer pero se conserva su historial)</label>
       ${botonesDlg(!nuevo)}`, (f) => (f.onsubmit = () => leerConDias(f)));
@@ -895,7 +924,7 @@
     if (v !== "ok") return;
     const D = S.dlgDatos;
     try {
-      const datos = { nombre: D.nombre.trim(), descripcion: D.descripcion.trim() || null, tipo: "espacio", activo: !!D.activo, ...comunes(D) };
+      const datos = { nombre: D.nombre.trim(), descripcion: D.descripcion.trim() || null, categoria: D.categoria.trim() || null, tipo: "espacio", activo: !!D.activo, ...comunes(D) };
       await api.guardarEspacio(nuevo ? datos : { id: e.id, ...datos }); toast("Guardado ✓"); await pintarAdmin();
     } catch (err) { fallo(err); }
   }

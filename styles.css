@@ -322,3 +322,33 @@ h3.sub { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; colo
   .top, nav, .pie, .demo, .semana-nav, .ayuda, .bloque-cab .btn, .barra-sel { display: none !important; }
   body { background: #fff; } .tl-scroll { border: 0; overflow: visible; } .tl { min-width: 0; }
 }
+
+/* Categorías desplegables al reservar */
+details.cat { border: 1px solid var(--borde); border-radius: var(--radio); background: var(--panel); margin-bottom: 10px; }
+details.cat > summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; border-radius: var(--radio); }
+details.cat > summary::-webkit-details-marker { display: none; }
+details.cat > summary:hover { background: var(--neutro-bg); }
+details.cat[open] > summary { border-bottom: 1px solid var(--borde); border-radius: var(--radio) var(--radio) 0 0; }
+details.cat[open] > summary .flecha { transform: rotate(45deg); }
+.cat-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.cat-txt b { font-size: 16px; color: var(--azul); }
+.cat-txt small { color: var(--suave); font-size: 13px; }
+.cat-estado { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; font-size: 12.5px; color: var(--suave); }
+.cat-estado > span { background: var(--neutro-bg); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.cat-estado .cat-sel { background: var(--azul); color: #fff; font-weight: 700; }
+.cat-cuerpo { padding: 12px 14px 4px; }
+.cat-cuerpo .recursos { margin-bottom: 8px; }
+.campo .pista { font-weight: 400; color: var(--suave); font-size: 12px; }
+
+/* Ocupación: categorías y leyenda */
+.tl-cat { background: var(--neutro-bg); border-bottom: 1px solid var(--borde); padding: 5px 10px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--azul); }
+.tl-cat span { position: sticky; left: 10px; }
+.tl-leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--suave); margin: 10px 2px 0; }
+.tl-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.tl-leyenda i { display: inline-block; width: 22px; height: 14px; border-radius: 3px; border: 1px solid var(--borde); }
+.lg-cerrado { background: repeating-linear-gradient(135deg, var(--neutro-bg) 0 4px, var(--panel) 4px 8px); }
+.lg-bloq { background: repeating-linear-gradient(135deg, var(--mal-bg) 0 4px, var(--panel) 4px 8px); border: 1px dashed var(--mal) !important; }
+.lg-res { background: color-mix(in srgb, var(--azul) 22%, var(--panel)); border-left: 3px solid var(--azul) !important; }
+.lg-mia { background: var(--ok-bg); border-left: 3px solid var(--verde) !important; }
+.lg-ahora { width: 3px !important; border: 0 !important; background: var(--naranja); }
+@media (max-width: 700px) { details.cat > summary { flex-wrap: wrap; } .cat-estado { justify-content: flex-start; } }
