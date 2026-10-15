@@ -6,13 +6,13 @@ Web para que el profesorado reserve los espacios y dispositivos del colegio, en 
   1. **¿Cuándo?** Eliges el día y escribes la hora de inicio y de fin que quieras, o eliges una hora habitual (1ª hora, recreo…) como atajo. Puedes añadir varios días u horarios y repetirlo cada semana hasta una fecha.
   2. **¿Qué?** Marcas a la vez todos los espacios y dispositivos que necesites. Cada iPad (1–15) y cada portátil (1–20) se reserva por separado, o de golpe con un pack («iPads 1-5») o con «Todos los libres». Lo ocupado aparece en gris, con quién lo tiene.
   3. **¿Para qué?** Grupo o actividad. Se hacen todas las reservas de una vez (espacios × horarios).
-- **Ocupación**: la línea de tiempo de un día con todos los espacios. iPads y portátiles aparecen agrupados («5/15» ocupados) y se despliegan para ver cada uno. Al pulsar un hueco libre empieza una reserva ya rellena; al pulsar una reserva se ve de quién es.
+- **Ocupación**: la otra forma de reservar (se llega también desde el aviso de arriba de «Reservar»). La línea de tiempo de un día con todos los espacios. iPads y portátiles aparecen agrupados («5/15» ocupados) y se despliegan para ver cada uno. Al pulsar un hueco libre empieza una reserva ya rellena; al pulsar una reserva se ve de quién es.
 - **Mis reservas**: tus próximas reservas, agrupadas como las hiciste, con el botón para anularlas (una, todo el grupo o también las de otros días).
 - **Administración** (solo las cuentas autorizadas):
   - **Todas las reservas**: listado con filtros (fechas, espacio o dispositivo, profesor/a) y descarga para Excel. Desde aquí, y desde Ocupación, se puede mover, cambiar de hora o anular cualquier reserva.
   - **Espacios y dispositivos**: añadir, editar o desactivar espacios. En los dispositivos se puede cambiar el número o el nombre de cada uno, desactivarlos si están rotos, añadir más, crear o editar packs y crear tipos nuevos (cámaras, proyectores…). Para cada cosa se eligen los días y las horas entre las que se puede reservar.
   - **Horas habituales**: los atajos de horario que se ofrecen al reservar.
-  - **Bloqueos y usos fijos**: clases fijas cada semana (p. ej. Informática los lunes de 9:00 a 10:00), festivos, actos… para un espacio, un dispositivo, un tipo entero o todo.
+  - **Bloqueos y usos fijos**: clases fijas cada semana (p. ej. Informática los lunes de 9:00 a 10:00), festivos, actos… para un espacio, un dispositivo, un tipo entero o todo. Se crean de dos formas: **horas sueltas** (un día, varios días seguidos o un hueco cada semana) u **horario semanal** (una rejilla días × horas habituales donde se marcan varias horas a la vez; las seguidas se guardan juntas). Cada bloqueo lleva motivo y persona, los dos opcionales, y se puede editar o quitar desde la lista o pulsándolo en la rejilla.
   - **Cuentas de administración**: dar o quitar este acceso. Al empezar son laura.ramos, silvia.alonso, rocio.cano, antonio.puntas, administracionnervion y mangeles.chavez (@salesianas.org).
 
 ## Probarla ahora (modo prueba)

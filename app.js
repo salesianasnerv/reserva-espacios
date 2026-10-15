@@ -64,7 +64,7 @@
   // ─── Estado ──────────────────────────────────────────────────────────────
   const formNuevo = () => ({ slots: [{ fecha: proximoDia(), inicio: "", fin: "" }], repetir: false, hasta: "", sel: new Set() });
   const S = { user: null, franjas: [], espacios: [], bloqueos: [], packs: [], reservas: [], dispo: [], form: null,
-    ocDia: hoyIso(), abiertos: new Set(), catAbiertas: new Set(), admSec: null, vista: null };
+    ocDia: hoyIso(), abiertos: new Set(), catAbiertas: new Set(), admSec: null, vista: null, bloqModo: "sueltas", semSel: new Set() };
   const espacio = (id) => S.espacios.find((e) => e.id == id);
   const franjasActivas = () => S.franjas.filter((f) => f.activo);
   // Etapas de las horas habituales; la última que usó esta persona va primero
@@ -112,6 +112,8 @@
     return S.bloqueos.filter((b) => (b.espacio_id == e.id || (b.grupo && b.grupo === e.grupo) || (b.espacio_id == null && !b.grupo)) &&
       (b.fecha === fecha || (b.dia_semana === dow && (!b.desde || fecha >= b.desde) && (!b.hasta || fecha <= b.hasta))));
   }
+  // Lo que se muestra de un bloqueo: motivo y persona (los dos son opcionales)
+  const textoBloq = (b) => [b.motivo, b.persona].filter(Boolean).join(" · ") || "Bloqueado";
   // Motivos por los que un recurso no se puede reservar en un momento (vacío = libre). Las mismas reglas que la base de datos.
   function conflictos(e, o, lista = S.dispo, ignorar = null) {
     const c = [], dow = dowIso(o.fecha);
@@ -121,7 +123,7 @@
       if (o.inicio < e.apertura || o.fin > e.cierre) c.push(`solo se reserva de ${e.apertura} a ${e.cierre}`);
     }
     const b = bloqueosDe(e, o.fecha).find((b) => !b.inicio || solapan(b, o));
-    if (b) c.push(`no disponible: ${b.motivo}`);
+    if (b) c.push(`no disponible: ${textoBloq(b)}`);
     lista.filter((r) => r.espacio_id == e.id && r.fecha === o.fecha && r.id !== ignorar && solapan(r, o))
       .forEach((r) => c.push(`reservado de ${r.inicio} a ${r.fin} por ${r.profesor_email === S.user.email ? "ti" : quien(r)}`));
     return c;
@@ -209,6 +211,7 @@
     async guardarFranja(f) { const d = this._db(); if (f.id) Object.assign(d.franjas.find((x) => x.id === f.id), f); else d.franjas.push({ ...f, id: this._id(d) }); this._set(d); },
     async borrarFranja(id) { const d = this._db(); d.franjas = d.franjas.filter((x) => x.id !== id); this._set(d); },
     async crearBloqueos(filas) { const d = this._db(); filas.forEach((b) => d.bloqueos.push({ ...b, id: this._id(d) })); this._set(d); },
+    async guardarBloqueo(b) { const d = this._db(); Object.assign(d.bloqueos.find((x) => x.id === b.id), b); this._set(d); },
     async borrarBloqueo(id) { const d = this._db(); d.bloqueos = d.bloqueos.filter((b) => b.id !== id); this._set(d); },
     async admins() { return [...this._db().admins].sort().map((email) => ({ email })); },
     async addAdmin(email) { const d = this._db(); if (d.admins.includes(email)) throw new Error("Esa cuenta ya tiene acceso"); d.admins.push(email); this._set(d); },
@@ -284,6 +287,7 @@
     async guardarFranja(f) { const { id, ...datos } = f; ok(id ? await sb.from("res_franjas").update(datos).eq("id", id) : await sb.from("res_franjas").insert(datos)); },
     async borrarFranja(id) { ok(await sb.from("res_franjas").delete().eq("id", id)); },
     async crearBloqueos(filas) { ok(await sb.from("res_bloqueos").insert(filas)); },
+    async guardarBloqueo(b) { const { id, ...datos } = b; ok(await sb.from("res_bloqueos").update(datos).eq("id", id)); },
     async borrarBloqueo(id) { ok(await sb.from("res_bloqueos").delete().eq("id", id)); },
     async admins() { return ok(await sb.from("res_admin").select("email").order("email")); },
     async addAdmin(email) { unico(await sb.from("res_admin").insert({ email }), "Esa cuenta ya tiene acceso"); },
@@ -418,6 +422,8 @@
     $("#que").addEventListener("toggle", (e) => { const d = e.target; if (d.matches?.("details.cat")) d.open ? S.catAbiertas.add(d.dataset.cat) : S.catAbiertas.delete(d.dataset.cat); }, true);
     $("#selQuitar").onclick = () => { S.form = formNuevo(); $("#fMotivo").value = ""; $("#fEmail").value = ""; refrescar(); };
     $("#selReservar").onclick = reservar;
+    // La otra forma de reservar: sobre el horario del día que se esté mirando
+    $("#irOcupacion").onclick = () => { const f = S.form.slots[0]?.fecha; if (f) S.ocDia = f; mostrar("ocupacion"); };
   }
   function cambioCuando() { clearTimeout(S._dispo); S._dispo = setTimeout(() => cargarDispo().catch(fallo), 250); }
 
@@ -592,6 +598,17 @@
     $("#ocHoy").onclick = () => ir(hoyIso());
     $("#ocFecha").onchange = (e) => { if (e.target.value) { ir(e.target.value); e.target.value = ""; } };
     $("#ocupacion").addEventListener("click", pulsarOcupacion);
+    // Al pasar el ratón por un hueco libre se ve qué se reservaría al pulsar
+    $("#ocupacion").addEventListener("mousemove", (ev) => {
+      const pista = ev.target.closest("[data-pista]"), el = $("#ocupacion .tl-hueco");
+      if (!pista || ev.target.closest(".tl-res, .tl-bloq, .tl-cerrado")) return el?.remove();
+      const h = huecoEn(pista, ev.clientX), g = el?.parentNode === pista ? el : document.createElement("div");
+      if (g !== el) { el?.remove(); g.className = "tl-hueco"; pista.append(g); }
+      const { t0, t1 } = S.tl, pos = (t) => ((toMin(t) - t0) / (t1 - t0)) * 100;
+      g.style.cssText = `left:${pos(h.ini)}%;width:${pos(h.fin) - pos(h.ini)}%`;
+      g.innerHTML = `<b>+ Reservar</b> ${h.ini}–${h.fin}`;
+    });
+    $("#ocupacion").addEventListener("mouseleave", () => $("#ocupacion .tl-hueco")?.remove());
   }
 
   async function pintarOcupacion() {
@@ -614,7 +631,7 @@
       if (!e.dias.includes(dow)) return `<div class="tl-cerrado" style="left:0;width:100%">No se reserva este día</div>`;
       return (toMin(e.apertura) > t0 ? `<div class="tl-cerrado" style="${caja(deMin(t0), e.apertura)}" title="Horas no lectivas"></div>` : "") +
         (toMin(e.cierre) < t1 ? `<div class="tl-cerrado" style="${caja(e.cierre, deMin(t1))}" title="Horas no lectivas"></div>` : "") +
-        bloqueosDe(e, d).map((b) => `<div class="tl-bloq" style="${b.inicio ? caja(b.inicio, b.fin) : "left:0;width:100%"}" title="${esc(b.motivo)}">${esc(b.motivo)}</div>`).join("");
+        bloqueosDe(e, d).map((b) => `<div class="tl-bloq" style="${b.inicio ? caja(b.inicio, b.fin) : "left:0;width:100%"}" title="${esc(textoBloq(b))}">${esc(textoBloq(b))}</div>`).join("");
     };
     const barra = (r) => `<button type="button" class="tl-res ${r.profesor_email === S.user.email ? "mia" : ""}" data-res="${r.id}" style="${caja(r.inicio, r.fin)}"
       title="${esc(`${r.inicio}–${r.fin} · ${quien(r)}${r.motivo ? " · " + r.motivo : ""}`)}"><b>${esc(r.profesor_email === S.user.email ? "Tú" : corto(quien(r)))}</b> ${esc(r.motivo || "")}</button>`;
@@ -651,15 +668,21 @@
     const g = ev.target.closest("[data-grupo]");
     if (g) { S.abiertos.has(g.dataset.grupo) ? S.abiertos.delete(g.dataset.grupo) : S.abiertos.add(g.dataset.grupo); return pintarOcupacion().catch(fallo); }
     const pista = ev.target.closest("[data-pista]"); if (!pista) return;
-    // Hueco libre: se propone la hora habitual de ese momento (o una hora desde ahí)
+    const b = ev.target.closest(".tl-bloq, .tl-cerrado");
+    if (b) return toast(b.matches(".tl-bloq") ? `No disponible: ${b.title}` : "En ese momento no se reserva");
+    const h = huecoEn(pista, ev.clientX);
+    reservarDesde(S.ocDia, h.ini, h.fin, h.e.id);
+  }
+  // Hueco libre en una fila: se propone la hora habitual de ese momento (o una hora desde ahí)
+  function huecoEn(pista, x) {
     const rect = pista.getBoundingClientRect(), { t0, t1 } = S.tl;
-    const min = t0 + ((ev.clientX - rect.left) / rect.width) * (t1 - t0), e = espacio(+pista.dataset.pista);
+    const min = t0 + ((x - rect.left) / rect.width) * (t1 - t0), e = espacio(+pista.dataset.pista);
     const orden = etapasFranjas();
     const f = [...franjasActivas()].sort((a, b) => orden.indexOf(a.etapa || "") - orden.indexOf(b.etapa || "")).find((x) => toMin(x.inicio) <= min && min < toMin(x.fin));
     const ini = f ? f.inicio : deMin(Math.floor(min / 30) * 30);
     let fin = f ? f.fin : deMin(Math.min(toMin(ini) + 60, toMin(e.cierre)));
     if (fin <= ini) fin = deMin(toMin(ini) + 30);
-    reservarDesde(S.ocDia, ini, fin, e.id);
+    return { e, ini, fin };
   }
 
   // ─── Ver, anular y mover reservas ─────────────────────────────────────────
@@ -800,9 +823,28 @@
     const verTipo = () => $$("[data-b]", B).forEach((el) => (el.hidden = el.dataset.b !== B.tipo.value));
     B.tipo.onchange = verTipo; verTipo();
     B.onsubmit = (e) => { e.preventDefault(); crearBloqueo(); };
-    $("#admBloqueos").addEventListener("click", async (e) => {
-      const b = e.target.closest("[data-quitar]"); if (!b) return;
-      try { await api.borrarBloqueo(+b.dataset.quitar); await recargarDatos(); pintarBloqueos(); toast("Bloqueo quitado"); } catch (err) { fallo(err); }
+    $$("#bloqModos [data-modo]").forEach((b) => (b.onclick = () => { S.bloqModo = b.dataset.modo; pintarBloqueos(); }));
+    const W = $("#bloqSemana");
+    W.onsubmit = (e) => { e.preventDefault(); crearSemana(); };
+    W.addEventListener("change", (e) => {
+      if (e.target.name === "etapa") { S.semSel.clear(); guardarEtapa(e.target.value); }
+      if (["espacio", "etapa", "desde", "hasta"].includes(e.target.name)) pintarSemana();
+    });
+    $("#semanaLimpiar").onclick = () => { S.semSel.clear(); pintarSemana(); };
+    $("#semanaRejilla").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      const d = b.dataset;
+      if (d.bloq) return editarBloqueo(S.bloqueos.find((x) => x.id == d.bloq));
+      // Una celda, o todas las libres de una fila (hora) o columna (día)
+      const ks = d.celda ? [d.celda] : S.semLibres.filter((k) => (d.col ? k.startsWith(d.col + "|") : d.fila ? k.endsWith("|" + d.fila) : false));
+      if (!ks.length) return;
+      ks.every((k) => S.semSel.has(k)) ? ks.forEach((k) => S.semSel.delete(k)) : ks.forEach((k) => S.semSel.add(k));
+      pintarSemana();
+    });
+    $("#bloqFiltro").onchange = pintarListaBloqueos;
+    $("#admBloqueos").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-quitar], [data-editar]"); if (!b) return;
+      b.dataset.quitar ? quitarBloqueo(+b.dataset.quitar) : editarBloqueo(S.bloqueos.find((x) => x.id == b.dataset.editar));
     });
 
     // Cuentas
@@ -1032,41 +1074,153 @@
   }
 
   // Bloqueos
+  const destino = (v) => ({ espacio_id: v.startsWith("e:") ? +v.slice(2) : null, grupo: v.startsWith("g:") ? v.slice(2) : null });
+  const valorDestino = (b) => (b.espacio_id ? "e:" + b.espacio_id : b.grupo ? "g:" + b.grupo : "");
+  const queBloq = (b) => (b.espacio_id ? esc(espacio(b.espacio_id)?.nombre) : b.grupo ? "Todos los " + esc(b.grupo) : "<b>Todo</b>");
+  const cuandoBloq = (b) => (b.fecha ? fechaCorta(b.fecha) + " " + deIso(b.fecha).getFullYear()
+    : `Cada ${DIAS[b.dia_semana].toLowerCase()}${b.desde ? ` desde el ${fechaNum(b.desde)}` : ""}${b.hasta ? ` hasta el ${fechaNum(b.hasta)}` : ""}`);
+  const vigente = (b) => (b.fecha ? b.fecha >= hoyIso() : !b.hasta || b.hasta >= hoyIso());
+
   function pintarBloqueos() {
-    const B = $("#bloqForm");
-    rellenarSelectRecursos(B.espacio, "Todo (espacios y dispositivos)");
-    const hoy = hoyIso();
-    const vigente = (b) => (b.fecha ? b.fecha >= hoy : !b.hasta || b.hasta >= hoy);
-    const lista = [...S.bloqueos].sort((a, b) => vigente(b) - vigente(a) || (a.fecha || a.desde || "").localeCompare(b.fecha || b.desde || "") || (a.dia_semana || 0) - (b.dia_semana || 0));
-    if (!lista.length) { $("#admBloqueos").innerHTML = `<p class="vacio">No hay bloqueos.</p>`; return; }
-    $("#admBloqueos").innerHTML = `<div class="tabla-scroll"><table><tr><th>Qué</th><th>Cuándo</th><th>Horas</th><th>Motivo</th><th></th></tr>
-      ${lista.map((b) => `<tr class="${vigente(b) ? "" : "de-baja"}"><td>${b.espacio_id ? esc(espacio(b.espacio_id)?.nombre) : b.grupo ? "Todos los " + esc(b.grupo) : "<b>Todo</b>"}</td>
-        <td>${b.fecha ? fechaCorta(b.fecha) + " " + deIso(b.fecha).getFullYear() : `Cada ${DIAS[b.dia_semana].toLowerCase()}${b.desde ? ` desde el ${fechaNum(b.desde)}` : ""}${b.hasta ? ` hasta el ${fechaNum(b.hasta)}` : ""}`}</td>
-        <td>${b.inicio ? `${b.inicio}–${b.fin}` : "Todo el día"}</td><td>${esc(b.motivo)}</td>
-        <td class="acciones-fila"><button class="btn mini peligro" type="button" data-quitar="${b.id}">Quitar</button></td></tr>`).join("")}</table></div>`;
+    const modo = S.bloqModo;
+    $$("#bloqModos [data-modo]").forEach((b) => b.classList.toggle("activo", b.dataset.modo === modo));
+    $$("form[data-modo]").forEach((f) => (f.hidden = f.dataset.modo !== modo));
+    rellenarSelectRecursos($("#bloqForm").espacio, "Todo (espacios y dispositivos)");
+    rellenarSelectRecursos($("#bloqSemana").espacio, "Todo (espacios y dispositivos)");
+    rellenarSelectRecursos($("#bloqFiltro"), "Todos");
+    if (modo === "semana") pintarSemana();
+    pintarListaBloqueos();
+  }
+  function pintarListaBloqueos() {
+    const f = $("#bloqFiltro").value;
+    const lista = S.bloqueos.filter((b) => !f || valorDestino(b) === f)
+      .sort((a, b) => vigente(b) - vigente(a) || (a.fecha || a.desde || "").localeCompare(b.fecha || b.desde || "") || (a.dia_semana || 0) - (b.dia_semana || 0) || (a.inicio || "").localeCompare(b.inicio || ""));
+    if (!lista.length) { $("#admBloqueos").innerHTML = `<p class="vacio">No hay bloqueos${f ? " de esto" : ""}.</p>`; return; }
+    $("#admBloqueos").innerHTML = `<div class="tabla-scroll"><table><tr><th>Qué</th><th>Cuándo</th><th>Horas</th><th>Motivo</th><th>Persona</th><th></th></tr>
+      ${lista.map((b) => `<tr class="${vigente(b) ? "" : "de-baja"}"><td>${queBloq(b)}</td><td>${cuandoBloq(b)}</td>
+        <td>${b.inicio ? `${b.inicio}–${b.fin}` : "Todo el día"}</td><td>${esc(b.motivo || "")}</td><td>${esc(b.persona || "")}</td>
+        <td class="acciones-fila"><button class="btn mini" type="button" data-editar="${b.id}">Editar</button> <button class="btn mini peligro" type="button" data-quitar="${b.id}">Quitar</button></td></tr>`).join("")}</table></div>`;
+  }
+  async function quitarBloqueo(id) {
+    try { await api.borrarBloqueo(id); await recargarDatos(); pintarBloqueos(); toast("Bloqueo quitado"); } catch (err) { fallo(err); }
+  }
+  // Comprueba las horas y fechas de un bloqueo; devuelve el error o null
+  function errorBloqueo(D, semanal) {
+    if (!!D.inicio !== !!D.fin) return "Pon las dos horas, o ninguna para todo el día";
+    if (D.inicio && D.fin <= D.inicio) return "La hora final debe ser posterior a la inicial";
+    if (!semanal && !D.fecha) return "Elige el día";
+    if (semanal && D.desde && D.hasta && D.hasta < D.desde) return "«Hasta» es anterior a «Desde»";
+    return null;
   }
   async function crearBloqueo() {
-    const B = $("#bloqForm"), v = B.espacio.value;
-    if (!!B.inicio.value !== !!B.fin.value) return toast("Pon las dos horas, o ninguna para todo el día");
-    if (B.inicio.value && B.fin.value <= B.inicio.value) return toast("La hora final debe ser posterior a la inicial");
-    const base = { espacio_id: v.startsWith("e:") ? +v.slice(2) : null, grupo: v.startsWith("g:") ? v.slice(2) : null,
-      inicio: B.inicio.value || null, fin: B.fin.value || null, motivo: B.motivo.value.trim() };
+    const B = $("#bloqForm"), D = Object.fromEntries(new FormData(B)), semanal = D.tipo === "semanal";
+    const err = errorBloqueo(D, semanal); if (err) return toast(err);
+    const base = { ...destino(D.espacio), inicio: D.inicio || null, fin: D.fin || null, motivo: D.motivo.trim() || null, persona: D.persona.trim() || null };
     let filas;
-    if (B.tipo.value === "fecha") {
-      if (!B.fecha.value) return toast("Elige el día");
-      const fin = B.fechaFin.value || B.fecha.value;
-      if (fin < B.fecha.value) return toast("La fecha final es anterior a la primera");
+    if (!semanal) {
+      const fin = D.fechaFin || D.fecha;
+      if (fin < D.fecha) return toast("La fecha final es anterior a la primera");
       filas = [];
-      for (let d = B.fecha.value; d <= fin; d = masDiasIso(d, 1)) filas.push({ ...base, fecha: d });
+      for (let d = D.fecha; d <= fin; d = masDiasIso(d, 1)) filas.push({ ...base, fecha: d });
       if (filas.length > 120) return toast("Como mucho 120 días seguidos");
-    } else {
-      if (B.desde.value && B.hasta.value && B.hasta.value < B.desde.value) return toast("«Hasta» es anterior a «Desde»");
-      filas = [{ ...base, dia_semana: +B.dia.value, desde: B.desde.value || null, hasta: B.hasta.value || null }];
-    }
+    } else filas = [{ ...base, dia_semana: +D.dia, desde: D.desde || null, hasta: D.hasta || null }];
     try {
       await api.crearBloqueos(filas);
-      ["motivo", "fecha", "fechaFin", "inicio", "fin"].forEach((k) => (B[k].value = ""));
+      ["motivo", "persona", "fecha", "fechaFin", "inicio", "fin"].forEach((k) => (B[k].value = ""));
       await recargarDatos(); pintarBloqueos(); toast(filas.length > 1 ? `${filas.length} días bloqueados` : "Bloqueo añadido");
+    } catch (err) { fallo(err); }
+  }
+
+  async function editarBloqueo(b) {
+    if (!b) return;
+    const v = await dialogo(`<h2>Editar bloqueo</h2>
+      <label class="campo">Qué <select name="espacio"></select></label>
+      <div class="fila">
+        <label class="campo">Cuándo <select name="tipo"><option value="fecha" ${b.fecha ? "selected" : ""}>Un día concreto</option><option value="semanal" ${b.fecha ? "" : "selected"}>Cada semana</option></select></label>
+        <label class="campo" data-b="fecha">Día <input type="date" name="fecha" value="${b.fecha || ""}"></label>
+        <label class="campo" data-b="semanal">Día de la semana <select name="dia">${[1, 2, 3, 4, 5, 6, 7].map((d) => `<option value="${d}" ${d === b.dia_semana ? "selected" : ""}>${DIAS[d]}</option>`).join("")}</select></label>
+      </div>
+      <div class="fila" data-b="semanal">
+        <label class="campo">Desde el (opcional) <input type="date" name="desde" value="${b.desde || ""}"></label>
+        <label class="campo">Hasta el (opcional) <input type="date" name="hasta" value="${b.hasta || ""}"></label>
+      </div>
+      <div class="fila">
+        <label class="campo">De (vacío = todo el día) <input type="time" step="300" name="inicio" value="${b.inicio || ""}"></label>
+        <label class="campo">A <input type="time" step="300" name="fin" value="${b.fin || ""}"></label>
+      </div>
+      <label class="campo">Motivo (opcional) <input name="motivo" value="${esc(b.motivo || "")}" placeholder="Clase fija de 1º ESO A, festivo…" autocomplete="off"></label>
+      <label class="campo">Persona (opcional) <input name="persona" value="${esc(b.persona || "")}" placeholder="Quién lo usa" autocomplete="off"></label>
+      ${botonesDlg(true)}`, (f) => {
+      rellenarSelectRecursos(f.espacio, "Todo (espacios y dispositivos)"); f.espacio.value = valorDestino(b);
+      const ver = () => $$("[data-b]", f).forEach((el) => (el.hidden = el.dataset.b !== f.tipo.value));
+      f.tipo.onchange = ver; ver();
+    });
+    if (v === "borrar") return quitarBloqueo(b.id);
+    if (v !== "ok") return;
+    const D = S.dlgDatos, semanal = D.tipo === "semanal";
+    const err = errorBloqueo(D, semanal); if (err) return toast(err);
+    const datos = { id: b.id, ...destino(D.espacio), inicio: D.inicio || null, fin: D.fin || null, motivo: D.motivo.trim() || null, persona: D.persona.trim() || null,
+      fecha: semanal ? null : D.fecha, dia_semana: semanal ? +D.dia : null, desde: semanal ? D.desde || null : null, hasta: semanal ? D.hasta || null : null };
+    try { await api.guardarBloqueo(datos); await recargarDatos(); pintarBloqueos(); toast("Bloqueo guardado ✓"); } catch (err) { fallo(err); }
+  }
+
+  // Horario semanal: días × horas habituales; cada celda marcada será un bloqueo semanal
+  function pintarSemana() {
+    const W = $("#bloqSemana"), ets = etapasFranjas(), v = W.espacio.value;
+    const etAnt = W.etapa.value;
+    W.etapa.innerHTML = ets.map((et) => `<option value="${esc(et)}">${esc(et || "Horas habituales")}</option>`).join("");
+    W.etapa.value = ets.includes(etAnt) ? etAnt : ets[0] ?? "";
+    W.etapa.closest("label").hidden = ets.length < 2;
+    const fr = franjasActivas().filter((f) => (f.etapa || "") === W.etapa.value).sort((a, b) => a.inicio.localeCompare(b.inicio));
+    if (!fr.length) { $("#semanaRejilla").innerHTML = `<p class="vacio">Primero añade horas habituales (Administración → Horas habituales).</p>`; S.semLibres = []; return pintarBotonSemana(); }
+    // Recursos elegidos (para saber si hay que mostrar sábado o domingo) y bloqueos semanales que les afectan
+    const id = v.startsWith("e:") ? +v.slice(2) : null, g = v.startsWith("g:") ? v.slice(2) : null, e = id && espacio(id);
+    const rs = e ? [e] : g ? deGrupo(g, true) : S.espacios.filter((x) => x.activo);
+    const dias = [1, 2, 3, 4, 5, 6, 7].filter((d) => d <= 5 || rs.some((x) => x.dias.includes(d)));
+    const a = W.desde.value || hoyIso(), z = W.hasta.value || "9999-12-31";
+    const todo = (b) => !b.espacio_id && !b.grupo;
+    const afecta = (b) => (e ? b.espacio_id == id || (b.grupo && b.grupo === e.grupo) || todo(b) : g ? b.grupo === g || todo(b) : todo(b));
+    const sem = S.bloqueos.filter((b) => b.dia_semana && afecta(b) && (!b.hasta || b.hasta >= a) && (!b.desde || b.desde <= z));
+    const libres = [];
+    const celda = (d, f) => {
+      const b = sem.find((x) => x.dia_semana === d && (!x.inicio || solapan(x, f)));
+      if (b) return `<td><button type="button" class="celda bloq" data-bloq="${b.id}" title="${esc(`${textoBloq(b)} · ${b.inicio ? b.inicio + "–" + b.fin : "todo el día"} · pulsa para editar`)}">${esc(textoBloq(b))}</button></td>`;
+      const k = d + "|" + f.id, on = S.semSel.has(k); libres.push(k);
+      return `<td><button type="button" class="celda ${on ? "on" : ""}" data-celda="${k}" aria-pressed="${on}" aria-label="${DIAS[d]}, ${esc(f.nombre)}"></button></td>`;
+    };
+    $("#semanaRejilla").innerHTML = `<table class="semana"><tr><th></th>${dias.map((d) => `<th><button type="button" class="cab" data-col="${d}">${DIAS[d]}</button></th>`).join("")}</tr>
+      ${fr.map((f) => `<tr><th><button type="button" class="cab fila-cab" data-fila="${f.id}">${esc(f.nombre)}<small>${f.inicio}–${f.fin}</small></button></th>${dias.map((d) => celda(d, f)).join("")}</tr>`).join("")}</table>`;
+    S.semLibres = libres;
+    [...S.semSel].forEach((k) => { if (!libres.includes(k)) S.semSel.delete(k); });
+    pintarBotonSemana();
+  }
+  // Las horas marcadas, juntando las seguidas del mismo día
+  function rangosSemana() {
+    const porDia = new Map();
+    S.semSel.forEach((k) => { const [d, fid] = k.split("|"), f = S.franjas.find((x) => x.id == fid); if (f) porDia.set(+d, [...(porDia.get(+d) || []), f]); });
+    const out = [];
+    porDia.forEach((l, d) => {
+      l.sort((a, b) => a.inicio.localeCompare(b.inicio)).forEach((f) => {
+        const u = out[out.length - 1];
+        if (u && u.dia_semana === d && f.inicio <= u.fin) u.fin = f.fin > u.fin ? f.fin : u.fin;
+        else out.push({ dia_semana: d, inicio: f.inicio, fin: f.fin });
+      });
+    });
+    return out.sort((a, b) => a.dia_semana - b.dia_semana || a.inicio.localeCompare(b.inicio));
+  }
+  function pintarBotonSemana() {
+    const n = rangosSemana().length, b = $("#semanaGuardar");
+    b.disabled = !n; b.textContent = n ? `Añadir ${n} ${n === 1 ? "bloqueo semanal" : "bloqueos semanales"}` : "Marca alguna hora";
+  }
+  async function crearSemana() {
+    const W = $("#bloqSemana"), filas = rangosSemana();
+    if (!filas.length) return toast("Marca al menos una hora");
+    if (W.desde.value && W.hasta.value && W.hasta.value < W.desde.value) return toast("«Hasta» es anterior a «Desde»");
+    const base = { ...destino(W.espacio.value), fecha: null, desde: W.desde.value || null, hasta: W.hasta.value || null, motivo: W.motivo.value.trim() || null, persona: W.persona.value.trim() || null };
+    try {
+      await api.crearBloqueos(filas.map((f) => ({ ...base, ...f })));
+      S.semSel.clear(); W.motivo.value = ""; W.persona.value = "";
+      await recargarDatos(); pintarBloqueos(); toast(filas.length > 1 ? `${filas.length} bloqueos semanales añadidos` : "Bloqueo semanal añadido");
     } catch (err) { fallo(err); }
   }
 

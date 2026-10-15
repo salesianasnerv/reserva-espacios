@@ -37,6 +37,10 @@ insert into res_espacios (nombre, descripcion, color, icono, orden) values
   ('Laboratorio',         'Prácticas de ciencias.',                    '#6b7200', 'matraz',    5)
 on conflict (nombre) do nothing;
 
+-- Categorías de los espacios (los dispositivos van siempre en «Dispositivos»)
+update res_espacios set categoria = 'Zonas comunes'   where categoria is null and nombre in ('Salón de Actos', 'Biblioteca', 'Recibidor');
+update res_espacios set categoria = 'Aulas temáticas' where categoria is null and nombre in ('Aula de Informática', 'Laboratorio');
+
 -- Dispositivos numerados (los números se pueden cambiar desde la web)
 insert into res_espacios (nombre, tipo, grupo, numero, color, icono, orden)
 select 'iPad ' || n, 'dispositivo', 'iPads', n, '#d35a15', 'tableta', 100 + n from generate_series(1, 15) n

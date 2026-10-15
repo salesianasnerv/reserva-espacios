@@ -29,6 +29,7 @@ create table if not exists res_espacios (
   nombre      text not null unique,                 -- "Salón de Actos", "iPad 7"
   descripcion text,
   tipo        text not null default 'espacio' check (tipo in ('espacio', 'dispositivo')),
+  categoria   text,                                 -- espacios: "Zonas comunes", "Aulas temáticas"
   grupo       text,                                 -- dispositivos: "iPads", "Portátiles"
   numero      int,                                  -- dispositivos: su número dentro del grupo
   color       text not null default '#009abb',
@@ -40,6 +41,8 @@ create table if not exists res_espacios (
   orden       int  not null default 0,
   check ((tipo = 'dispositivo') = (grupo is not null))
 );
+
+alter table res_espacios add column if not exists categoria text;  -- por si la tabla ya existía
 
 -- ── Packs: grupos de dispositivos que se reservan juntos ────────────────────
 create table if not exists res_packs (
@@ -63,11 +66,16 @@ create table if not exists res_bloqueos (
   hasta       date,
   inicio      time,
   fin         time,
-  motivo      text not null,
+  motivo      text,                               -- opcional
+  persona     text,                               -- opcional: quién lo usa
   creado      timestamptz not null default now(),
   check ((fecha is not null) <> (dia_semana is not null)),
   check ((inicio is null) = (fin is null) and (fin is null or fin > inicio))
 );
+
+-- Por si la tabla ya existía: el motivo pasa a ser opcional y se añade la persona
+alter table res_bloqueos alter column motivo drop not null;
+alter table res_bloqueos add column if not exists persona text;
 
 -- ── Reservas ────────────────────────────────────────────────────────────────
 create table if not exists res_reservas (

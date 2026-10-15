@@ -65,7 +65,7 @@
         <summary><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg><span>Profesorado <small>Acceso: inicio de sesión con Microsoft 365 (@salesianas.org)</small></span></summary>
         <ul>
           <li><b>Reservar:</b> elige el día y las horas, marca los espacios y dispositivos que necesites y di para qué. Se puede repetir cada semana.</li>
-          <li><b>Ocupación:</b> qué está libre y quién tiene cada reserva, día a día.</li>
+          <li><b>Ocupación:</b> qué está libre y quién tiene cada reserva, día a día. Pulsando un hueco libre también se reserva.</li>
           <li><b>Mis reservas:</b> tus próximas reservas, con el botón para anularlas.</li>
         </ul>
       </details>
@@ -118,6 +118,17 @@
 
     <!-- Reservar -->
     <section id="vReservar" hidden>
+      <div class="formas">
+        <div class="forma activa">
+          <span class="forma-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3"/></svg></span>
+          <span><b>Paso a paso</b><small>Elige día y horas, marca lo que necesitas y reserva. Ideal para varias cosas, varios días o cada semana.</small></span>
+        </div>
+        <button type="button" class="forma" id="irOcupacion">
+          <span class="forma-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 15h5" stroke-width="3"/></svg></span>
+          <span><b>Sobre el horario del día</b><small>Ves qué está libre y pulsas un hueco: la reserva se rellena sola.</small></span>
+          <span class="forma-ir" aria-hidden="true">→</span>
+        </button>
+      </div>
       <div class="paso caja">
         <h2 class="paso-tit"><span>1</span>¿Cuándo?</h2>
         <p class="ayuda">Elige el día y escribe las horas (o elige una hora habitual). Puedes añadir más días u horarios.</p>
@@ -166,7 +177,7 @@
         <button class="btn" id="ocHoy" type="button">Hoy</button>
         <label class="btn ir-fecha">Ir a fecha <input type="date" id="ocFecha"></label>
       </div>
-      <p class="ayuda">Pulsa una reserva para ver quién la tiene, o un hueco libre para reservarlo. Pulsa iPads o Portátiles para ver cada uno.</p>
+      <p class="consejo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span><b>Para reservar, pulsa un hueco libre</b> en la fila de lo que necesites: se abre la reserva con ese día y esa hora ya puestos. Pulsa una reserva para ver quién la tiene, o iPads y Portátiles para ver cada uno.</span></p>
       <div id="ocupacion" class="tl-scroll"></div>
     </section>
 
@@ -215,7 +226,24 @@
     <section class="caja admin-bloque" data-sec="bloqueos">
       <h2>Bloqueos y usos fijos</h2>
       <p class="ayuda">Momentos en los que algo no se puede reservar: clases fijas cada semana (p. ej. Informática de 1º ESO A los lunes de 9:00 a 10:00), festivos, actos del colegio… Las reservas que ya existan no se borran.</p>
-      <form id="bloqForm" class="filtros">
+      <div class="modos" id="bloqModos" role="tablist">
+        <button type="button" data-modo="sueltas" class="activo">Horas sueltas<small>Un día, varios días seguidos o un hueco cada semana</small></button>
+        <button type="button" data-modo="semana">Horario semanal<small>Marca varias horas de la semana a la vez</small></button>
+      </div>
+      <form id="bloqSemana" class="bloq-semana" data-modo="semana" hidden>
+        <div class="filtros">
+          <label class="campo">Qué <select name="espacio"></select></label>
+          <label class="campo">Horas de <select name="etapa"></select></label>
+          <label class="campo">Desde el (opcional) <input type="date" name="desde"></label>
+          <label class="campo">Hasta el (opcional) <input type="date" name="hasta"></label>
+          <label class="campo">Motivo (opcional) <input name="motivo" placeholder="Clase fija de 1º ESO A…" autocomplete="off"></label>
+          <label class="campo">Persona (opcional) <input name="persona" placeholder="Quién lo usa" autocomplete="off"></label>
+        </div>
+        <p class="nota">Pulsa las horas que quieras bloquear cada semana (o el nombre de un día o de una hora para marcar toda la columna o fila). Las horas seguidas del mismo día se guardan como un solo bloqueo. Lo que ya está bloqueado sale en rojo: púlsalo para editarlo.</p>
+        <div id="semanaRejilla" class="tabla-scroll"></div>
+        <div class="acciones"><button class="btn primario" id="semanaGuardar">Añadir bloqueos</button><button class="btn" type="button" id="semanaLimpiar">Desmarcar todo</button></div>
+      </form>
+      <form id="bloqForm" class="filtros" data-modo="sueltas">
         <label class="campo">Qué <select name="espacio"></select></label>
         <label class="campo">Cuándo
           <select name="tipo">
@@ -232,9 +260,14 @@
         <label class="campo" data-b="semanal">Hasta el <input type="date" name="hasta"></label>
         <label class="campo">De (vacío = todo el día) <input type="time" name="inicio" step="300"></label>
         <label class="campo">A <input type="time" name="fin" step="300"></label>
-        <label class="campo motivo">Motivo <input name="motivo" placeholder="Clase fija de 1º ESO A, festivo…" autocomplete="off" required></label>
+        <label class="campo">Motivo (opcional) <input name="motivo" placeholder="Clase fija de 1º ESO A, festivo…" autocomplete="off"></label>
+        <label class="campo">Persona (opcional) <input name="persona" placeholder="Quién lo usa" autocomplete="off"></label>
         <button class="btn primario">Añadir bloqueo</button>
       </form>
+      <div class="bloq-lista-cab">
+        <h3 class="sub">Bloqueos guardados</h3>
+        <label class="campo-linea">Mostrar <select id="bloqFiltro"></select></label>
+      </div>
       <div id="admBloqueos"></div>
     </section>
 
