@@ -231,9 +231,9 @@
         <button type="button" data-modo="semana">Horario semanal<small>Marca varias horas de la semana a la vez</small></button>
       </div>
       <form id="bloqSemana" class="bloq-semana" data-modo="semana" hidden>
-        <div class="filtros">
-          <label class="campo">Qué <select name="espacio"></select></label>
-          <label class="campo">Horas de <select name="etapa"></select></label>
+        <div class="filtros semana-campos">
+          <label class="campo">Espacio/Dispositivo <select name="espacio"></select></label>
+          <label class="campo">Plantilla horaria <select name="etapa"></select></label>
           <label class="campo">Desde el (opcional) <input type="date" name="desde"></label>
           <label class="campo">Hasta el (opcional) <input type="date" name="hasta"></label>
           <label class="campo">Motivo (opcional) <input name="motivo" placeholder="Clase fija de 1º ESO A…" autocomplete="off"></label>
@@ -243,14 +243,17 @@
         <div id="semanaRejilla" class="tabla-scroll"></div>
         <div class="acciones"><button class="btn primario" id="semanaGuardar">Añadir bloqueos</button><button class="btn" type="button" id="semanaLimpiar">Desmarcar todo</button></div>
       </form>
-      <form id="bloqForm" class="filtros" data-modo="sueltas">
-        <label class="campo">Qué <select name="espacio"></select></label>
+      <form id="bloqForm" class="filtros por-filas" data-modo="sueltas">
+        <div class="fila-campos">
+        <label class="campo">Espacio/Dispositivo <select name="espacio"></select></label>
         <label class="campo">Cuándo
           <select name="tipo">
             <option value="fecha">Un día concreto</option>
             <option value="semanal">Cada semana</option>
           </select>
         </label>
+        </div>
+        <div class="fila-campos">
         <label class="campo" data-b="fecha">Día <input type="date" name="fecha"></label>
         <label class="campo" data-b="fecha">Hasta (opcional) <input type="date" name="fechaFin"></label>
         <label class="campo" data-b="semanal">Día de la semana
@@ -260,9 +263,12 @@
         <label class="campo" data-b="semanal">Hasta el <input type="date" name="hasta"></label>
         <label class="campo">De (vacío = todo el día) <input type="time" name="inicio" step="300"></label>
         <label class="campo">A <input type="time" name="fin" step="300"></label>
+        </div>
+        <div class="fila-campos">
         <label class="campo">Motivo (opcional) <input name="motivo" placeholder="Clase fija de 1º ESO A, festivo…" autocomplete="off"></label>
         <label class="campo">Persona (opcional) <input name="persona" placeholder="Quién lo usa" autocomplete="off"></label>
         <button class="btn primario">Añadir bloqueo</button>
+        </div>
       </form>
       <div class="bloq-lista-cab">
         <h3 class="sub">Bloqueos guardados</h3>

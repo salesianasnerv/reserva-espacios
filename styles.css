@@ -450,6 +450,15 @@ button.forma .forma-ico { color: var(--naranja-hover); background: var(--aviso-b
 .modos button small { display: block; font-weight: 400; font-size: 12px; }
 .modos button.activo { background: var(--panel); color: var(--azul); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
 .bloq-semana .filtros { margin-bottom: 4px; }
+/* Horas sueltas: espacio y cuándo · fechas y horas · motivo y persona */
+.filtros.por-filas { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+.fila-campos { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.fila-campos > .campo { flex: 0 1 175px; min-width: 140px; }
+.fila-campos > .btn { margin-left: auto; }
+/* Horario semanal: de dos en dos (espacio y plantilla · fechas · motivo y persona) */
+.semana-campos { grid-template-columns: repeat(2, minmax(0, 360px)); }
+.semana-campos > :nth-child(3), .semana-campos > :nth-child(5) { grid-column: 1; }  /* cada pareja empieza fila */
+@media (max-width: 560px) { .semana-campos { grid-template-columns: 1fr; } }
 table.semana { width: auto; min-width: 520px; border-collapse: separate; border-spacing: 4px; }
 table.semana th, table.semana td { border: 0; padding: 0; }
 .semana .cab { width: 100%; font: inherit; font-size: 13px; font-weight: 700; color: var(--suave); background: none; border: 0; border-radius: 6px; padding: 6px 8px; cursor: pointer; }

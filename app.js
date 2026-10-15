@@ -1096,7 +1096,7 @@
     const lista = S.bloqueos.filter((b) => !f || valorDestino(b) === f)
       .sort((a, b) => vigente(b) - vigente(a) || (a.fecha || a.desde || "").localeCompare(b.fecha || b.desde || "") || (a.dia_semana || 0) - (b.dia_semana || 0) || (a.inicio || "").localeCompare(b.inicio || ""));
     if (!lista.length) { $("#admBloqueos").innerHTML = `<p class="vacio">No hay bloqueos${f ? " de esto" : ""}.</p>`; return; }
-    $("#admBloqueos").innerHTML = `<div class="tabla-scroll"><table><tr><th>Qué</th><th>Cuándo</th><th>Horas</th><th>Motivo</th><th>Persona</th><th></th></tr>
+    $("#admBloqueos").innerHTML = `<div class="tabla-scroll"><table><tr><th>Espacio/Dispositivo</th><th>Cuándo</th><th>Horas</th><th>Motivo</th><th>Persona</th><th></th></tr>
       ${lista.map((b) => `<tr class="${vigente(b) ? "" : "de-baja"}"><td>${queBloq(b)}</td><td>${cuandoBloq(b)}</td>
         <td>${b.inicio ? `${b.inicio}–${b.fin}` : "Todo el día"}</td><td>${esc(b.motivo || "")}</td><td>${esc(b.persona || "")}</td>
         <td class="acciones-fila"><button class="btn mini" type="button" data-editar="${b.id}">Editar</button> <button class="btn mini peligro" type="button" data-quitar="${b.id}">Quitar</button></td></tr>`).join("")}</table></div>`;
@@ -1134,7 +1134,7 @@
   async function editarBloqueo(b) {
     if (!b) return;
     const v = await dialogo(`<h2>Editar bloqueo</h2>
-      <label class="campo">Qué <select name="espacio"></select></label>
+      <label class="campo">Espacio/Dispositivo <select name="espacio"></select></label>
       <div class="fila">
         <label class="campo">Cuándo <select name="tipo"><option value="fecha" ${b.fecha ? "selected" : ""}>Un día concreto</option><option value="semanal" ${b.fecha ? "" : "selected"}>Cada semana</option></select></label>
         <label class="campo" data-b="fecha">Día <input type="date" name="fecha" value="${b.fecha || ""}"></label>
