@@ -442,7 +442,7 @@
       <label class="campo">Día <input type="date" data-k="fecha" value="${s.fecha}" ${S.user.admin ? "" : `min="${hoy}"`} ${max ? `max="${max}"` : ""}></label>
       <label class="campo">Desde <input type="time" step="300" data-k="inicio" value="${s.inicio}"></label>
       <label class="campo">Hasta <input type="time" step="300" data-k="fin" value="${s.fin}"></label>
-      ${atajos ? `<label class="campo">Hora habitual <select data-k="atajo"><option value="">Elegir…</option>${atajos}</select></label>` : ""}
+      ${atajos ? `<label class="campo">Plantilla horaria de clases <select data-k="atajo"><option value="">Elegir…</option>${atajos}</select></label>` : ""}
       ${S.form.slots.length > 1 ? `<button class="btn icono quitar" type="button" data-quitar="${i}" aria-label="Quitar este horario">×</button>` : ""}
       <div class="slot-info" id="slotInfo${i}"></div></div>`).join("");
     S.form.slots.forEach((_, i) => pintarInfoSlot(i));
@@ -1057,7 +1057,7 @@
   async function editarFranja(f) {
     const nuevo = !f;
     f ||= { etapa: S.franjas[0]?.etapa || "", nombre: "", inicio: "", fin: "", activo: true };
-    const v = await dialogo(`<h2>${nuevo ? "Nueva hora habitual" : "Editar " + esc(f.nombre)}</h2>
+    const v = await dialogo(`<h2>${nuevo ? "Nueva hora de la plantilla" : "Editar " + esc(f.nombre)}</h2>
       <label class="campo">Etapa <input name="etapa" value="${esc(f.etapa || "")}" list="etapasLista" placeholder="ESO · Bachillerato · CCFF" autocomplete="off">
         <datalist id="etapasLista">${[...new Set(S.franjas.map((x) => x.etapa).filter(Boolean))].map((x) => `<option value="${esc(x)}">`).join("")}</datalist></label>
       <div class="fila"><label class="campo crece">Nombre <input name="nombre" value="${esc(f.nombre)}" placeholder="7ª hora, Tarde…" required autocomplete="off"></label>
@@ -1168,11 +1168,11 @@
   function pintarSemana() {
     const W = $("#bloqSemana"), ets = etapasFranjas(), v = W.espacio.value;
     const etAnt = W.etapa.value;
-    W.etapa.innerHTML = ets.map((et) => `<option value="${esc(et)}">${esc(et || "Horas habituales")}</option>`).join("");
+    W.etapa.innerHTML = ets.map((et) => `<option value="${esc(et)}">${esc(et || "Plantilla horaria de clases")}</option>`).join("");
     W.etapa.value = ets.includes(etAnt) ? etAnt : ets[0] ?? "";
     W.etapa.closest("label").hidden = ets.length < 2;
     const fr = franjasActivas().filter((f) => (f.etapa || "") === W.etapa.value).sort((a, b) => a.inicio.localeCompare(b.inicio));
-    if (!fr.length) { $("#semanaRejilla").innerHTML = `<p class="vacio">Primero añade horas habituales (Administración → Horas habituales).</p>`; S.semLibres = []; return pintarBotonSemana(); }
+    if (!fr.length) { $("#semanaRejilla").innerHTML = `<p class="vacio">Primero añade horas a la plantilla (Administración → Plantilla horaria de clases).</p>`; S.semLibres = []; return pintarBotonSemana(); }
     // Recursos elegidos (para saber si hay que mostrar sábado o domingo) y bloqueos semanales que les afectan
     const id = v.startsWith("e:") ? +v.slice(2) : null, g = v.startsWith("g:") ? v.slice(2) : null, e = id && espacio(id);
     const rs = e ? [e] : g ? deGrupo(g, true) : S.espacios.filter((x) => x.activo);

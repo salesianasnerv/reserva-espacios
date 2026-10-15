@@ -92,6 +92,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 .campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--suave); font-weight: 600; }
 .campo.crece { flex: 1 1 220px; }
 .campo select, .campo input { padding: 9px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); color: var(--texto); font-weight: 400; min-width: 0; }
+/* Misma altura para todos los campos (Safari dibuja los desplegables más bajos) */
+.campo select, .campo input:not([type=checkbox]):not([type=radio]):not([type=color]) { height: 42px; }
+.campo select { -webkit-appearance: none; appearance: none; padding-right: 32px;
+  background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2364748B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 11px center; }
 .check { display: flex; align-items: center; gap: 6px; font-size: 14px; }
 
 .fuera { margin-bottom: 14px; }

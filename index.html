@@ -73,7 +73,7 @@
         <summary><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Administración <em class="aviso-etq">Solo cuentas autorizadas</em> <small>Acceso: inicio de sesión con Microsoft 365 (@salesianas.org)</small></span></summary>
         <ul>
           <li><b>Todas las reservas:</b> listado con filtros y descarga para Excel; mover, cambiar o anular cualquier reserva.</li>
-          <li><b>Espacios y dispositivos</b> y <b>horas habituales</b>.</li>
+          <li><b>Espacios y dispositivos</b> y <b>plantilla horaria de clases</b>.</li>
           <li><b>Bloqueos y usos fijos:</b> clases fijas, festivos, actos…</li>
           <li><b>Cuentas de administración:</b> dar o quitar este acceso.</li>
         </ul>
@@ -89,7 +89,7 @@
       <div class="desplegable">
         <button type="button" data-admin="listado" style="--c:#007791"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.5" fill="currentColor"/><circle cx="4.5" cy="12" r="1.5" fill="currentColor"/><circle cx="4.5" cy="18" r="1.5" fill="currentColor"/></svg>Todas las reservas</button>
         <button type="button" data-admin="espacios" style="--c:#8a9400"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Espacios y dispositivos</button>
-        <button type="button" data-admin="horario" style="--c:#ee712a"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Horas habituales</button>
+        <button type="button" data-admin="horario" style="--c:#ee712a"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Plantilla horaria de clases</button>
         <button type="button" data-admin="bloqueos" style="--c:#c0262d"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Bloqueos y usos fijos</button>
         <button type="button" data-admin="cuentas" style="--c:#475569"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Cuentas de administración</button>
       </div>
@@ -131,7 +131,7 @@
       </div>
       <div class="paso caja">
         <h2 class="paso-tit"><span>1</span>¿Cuándo?</h2>
-        <p class="ayuda">Elige el día y escribe las horas (o elige una hora habitual). Puedes añadir más días u horarios.</p>
+        <p class="ayuda">Elige el día y escribe las horas (o elígelas de la plantilla horaria de clases). Puedes añadir más días u horarios.</p>
         <div id="slots"></div>
         <div class="slots-acc">
           <button class="btn" id="btnSlot" type="button">+ Añadir otro día u horario</button>
@@ -214,12 +214,12 @@
       <div id="admEspacios"></div>
     </section>
 
-    <!-- Horas habituales -->
+    <!-- Plantilla horaria de clases -->
     <section class="caja admin-bloque" data-sec="horario">
-      <h2>Horas habituales</h2>
+      <h2>Plantilla horaria de clases</h2>
       <p class="ayuda">Son solo atajos: al reservar, el profesorado puede elegir una de estas horas o escribir las que quiera. Cambiarlas no afecta a las reservas ya hechas.</p>
       <div id="admFranjas"></div>
-      <div class="acciones"><button class="btn primario" id="btnNuevaFranja" type="button">+ Añadir hora habitual</button></div>
+      <div class="acciones"><button class="btn primario" id="btnNuevaFranja" type="button">+ Añadir hora a la plantilla</button></div>
     </section>
 
     <!-- Bloqueos -->
