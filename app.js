@@ -230,7 +230,7 @@
       if (!session && await window.TeamsSSO?.entrar(sb)) ({ data: { session } } = await sb.auth.getSession());
       if (!session) return null;
       const u = session.user, email = (u.email || "").toLowerCase();
-      if (!email.endsWith("@" + CFG.dominio)) {
+      if (![CFG.dominio, ...(CFG.dominiosExtra || [])].some((d) => email.endsWith("@" + d))) {
         await sb.auth.signOut();
         throw new Error(`Solo se permite el acceso con cuentas @${CFG.dominio}.`);
       }
@@ -566,7 +566,7 @@
     if (!S.oc?.length) return toast("Indica el día y las horas");
     if (!S.form.sel.size) return toast("Marca qué quieres reservar");
     const email = $("#fEmail").value.trim().toLowerCase();
-    if (email && !email.endsWith("@" + CFG.dominio)) return toast(`La cuenta debe ser @${CFG.dominio}`);
+    if (email && ![CFG.dominio, ...(CFG.dominiosExtra || [])].some((d) => email.endsWith("@" + d))) return toast(`La cuenta debe ser @${CFG.dominio}`);
     const base = { motivo: $("#fMotivo").value.trim() || null, lote: uuid() };
     if (email) Object.assign(base, { profesor_email: email, profesor_nombre: nombreDeEmail(email) });
     try {
@@ -854,7 +854,7 @@
     $("#admCuentaForm").onsubmit = async (e) => {
       e.preventDefault();
       const email = e.target.email.value.trim().toLowerCase();
-      if (!email.endsWith("@" + CFG.dominio)) return toast(`Debe ser una cuenta @${CFG.dominio}`);
+      if (![CFG.dominio, ...(CFG.dominiosExtra || [])].some((d) => email.endsWith("@" + d))) return toast(`Debe ser una cuenta @${CFG.dominio}`);
       try { await api.addAdmin(email); e.target.reset(); toast("Cuenta añadida"); pintarCuentas(); } catch (err) { fallo(err); }
     };
     $("#admCuentas").addEventListener("click", async (e) => {
